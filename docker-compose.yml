@@ -1,0 +1,38 @@
+version: '3'
+services:
+
+  bookingdb-i:
+    build:
+      context: .
+      dockerfile: ./src/db/dockerfile
+    container_name: bookingdb-c
+    networks:
+      - bookingms-network
+    ports:
+      - "3005:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "bookingdb-c"]
+      timeout: 20s
+      retries: 10
+
+  bookingms-i:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: bookingms-c
+    networks:
+      - bookingms-network
+    ports:
+      - "3002:3002"
+    depends_on:
+      bookingdb-i:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:3001/health-check || exit 1
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+networks:
+  bookingms-network:
